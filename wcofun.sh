@@ -1,21 +1,24 @@
 #!/bin/bash
 
-baseurl="https://www.wcofun.com/"
+# Things you might want to change:
+
+# Menu command
+menu_cmd="fzf"
+
+# User agent
 ua="user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
 
 
-trap exit INT
+baseurl="https://www.wcofun.com/"
 
-sel_menu (){
-  fzf
-}
+trap exit INT
 
 chru() { printf "\\U$(printf '%08x' "$1")"; }
 
 menu () {
   list=$1
   titles=$2
-  choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | sel_menu) 
+  choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | $menu_cmd) 
   if [ -z "$choosen" ]; then
     return
   fi
