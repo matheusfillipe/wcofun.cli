@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Matheus Fillipe Araújo Galvão  --- 25/01/2022
 # wcofun.com scraper MIT
 
@@ -10,13 +11,52 @@
 # Things you might want to change:
 
 # Menu command
-menu_cmd="fzf"
+# MENU_CMD="fzf"
+MENU_CMD="rofi -dmenu -i"
+# MENU_CMD="dmenu"
+
+# If you are calling this from the terminal you probably dont want this
+NOTIFY_CMD="notify-send WCOFUN"
 
 # User agent
-ua="user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
+UA="user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
 ##########################################################################################
 
+menu_cmd () {
+  case "$MENU_CMD" in
+    "fzf"*)
+      eval "$MENU_CMD $*"
+      ;;
+    "rofi"*)
+      args=${*//--prompt/-p}
+      args=${args//--query/-filter}
+      eval "$MENU_CMD $args"
+      ;;
+    "dmenu"*)
+      args=${*//--prompt/-p}
+      args=${args//--print-query/}
+      args=${args//--query \"*\"/}
+      >&2 echo "dmenu"
+      >&2 echo "$MENU_CMD $args"
+      eval "$MENU_CMD $args"
+      ;;
+    *)
+      echo "Warning: Unknown menu command: $MENU_CMD"
+      eval "$MENU_CMD $*"
+      ;;
+  esac
+}
+
+notify_cmd () {
+  echo "$*"
+  $NOTIFY_CMD "$1"
+}
+
+
 baseurl="https://www.wcofun.com/"
+storage="$HOME/.local/share/wcofun.cli/"
+
+mkdir -p "$storage"
 
 trap exit INT
 
@@ -25,7 +65,7 @@ chru() { printf "\\U$(printf '%08x' "$1")"; }
 choose_menu () {
   list=$1
   titles=$2
-  choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | $menu_cmd) 
+  choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd) 
   if [ -z "$choosen" ]; then
     return
   fi
@@ -54,7 +94,7 @@ get_link() {
     -H 'pragma: no-cache' \
     -H 'cache-control: no-cache' \
     -H 'accept: application/json, text/javascript, */*; q=0.01' \
-    -H "$ua" \
+    -H "$UA" \
     -H 'x-requested-with: XMLHttpRequest' \
     -H 'sec-gpc: 1' \
     -H 'sec-fetch-site: same-origin' \
@@ -68,7 +108,7 @@ get_link() {
 download () {
   curl "$1" \
     -H 'Connection: keep-alive' \
-    -H "$ua" \
+    -H "$UA" \
     -H 'Accept: */*' \
     -H 'Sec-GPC: 1' \
     -H 'Sec-Fetch-Site: cross-site' \
@@ -81,10 +121,10 @@ download () {
 }
 
 stream () {
-  # mpv --http-header-fields='Connection: keep-alive',"$ua",'Accept: */*','Sec-GPC: 1','Sec-Fetch-Site: cross-site','Sec-Fetch-Mode: no-cors','Sec-Fetch-Dest: video','Referer: https://www.wcofun.com/','Accept-Language: en-US,en;q=0.9','Range: bytes=0-' "$1"
+  # mpv --http-header-fields='Connection: keep-alive',"$UA",'Accept: */*','Sec-GPC: 1','Sec-Fetch-Site: cross-site','Sec-Fetch-Mode: no-cors','Sec-Fetch-Dest: video','Referer: https://www.wcofun.com/','Accept-Language: en-US,en;q=0.9','Range: bytes=0-' "$1"
   curl "$1" \
     -H 'Connection: keep-alive' \
-    -H "$ua" \
+    -H "$UA" \
     -H 'Accept: */*' \
     -H 'Sec-GPC: 1' \
     -H 'Sec-Fetch-Site: cross-site' \
@@ -103,7 +143,7 @@ search () {
     -H 'upgrade-insecure-requests: 1' \
     -H 'origin: https://www.wcofun.com' \
     -H 'content-type: application/x-www-form-urlencoded' \
-    -H "$ua" \
+    -H "$UA" \
     -H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9' \
     -H 'sec-gpc: 1' \
     -H 'sec-fetch-site: same-origin' \
@@ -126,7 +166,7 @@ choose_ep () {
   -H 'pragma: no-cache' \
   -H 'cache-control: no-cache' \
   -H 'upgrade-insecure-requests: 1' \
-  -H "$ua" \
+  -H "$UA" \
   -H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9' \
   -H 'sec-gpc: 1' \
   -H 'sec-fetch-site: none' \
@@ -145,7 +185,7 @@ all_eps () {
   -H 'pragma: no-cache' \
   -H 'cache-control: no-cache' \
   -H 'upgrade-insecure-requests: 1' \
-  -H "$ua" \
+  -H "$UA" \
   -H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9' \
   -H 'sec-gpc: 1' \
   -H 'sec-fetch-site: none' \
@@ -180,28 +220,29 @@ main () {
 
   query="$*"
   if [ -z "$query" ]; then
-    query=$(echo ' ' | $menu_cmd --prompt "Search query: " --print-query)
+    query=$(echo ' ' | menu_cmd --prompt \"Search query: \" --print-query)
   fi
   echo "Searching for: $query"
 
   anime=$(search "$query")
   if [ -z "$anime" ]; then
-      echo "no results for $1"
+    notify_cmd "no results for $query"
     exit 1
   fi
+  echo "Selected anime: $anime"
 
   # Download all episodes
   if [ "$download" = true ]; then
     folder="${query// /_}"
     mkdir -p "$folder"
-    echo "Downloading all episodes to $folder"
+    notify_cmd "Downloading all episodes to: $folder"
     echo 
     echo
     all_eps "$anime" | while read -r line; do
       ep=$(echo "$line" | htmlq 'a' -a href)
       title=$(echo "$line" | htmlq 'a' -a title)
       echo "Downloading: $title"
-      echo "Downloading: $ep"
+      echo "Episode url: $ep"
       url=$(get_link "$ep")
       echo "Got link: $url"
       download "$url" "$folder/$title.mp4"
@@ -213,18 +254,21 @@ main () {
   if [ -z "$ep" ]; then
     exit 1
   fi
+  echo "Selected episode: $ep"
 
-  opt=$(printf "%s\n%s" "Stream" "Download" | $menu_cmd)
+  opt=$(printf "%s\n%s" "Stream" "Download" | menu_cmd)
+  notify_cmd "Fetching video url..."
   url=$(get_link "$ep")
-  echo "Got link: $url"
+  echo "Got url: $url"
+
   case $opt in
     Stream)
-      echo "Streaming..."
+      notify_cmd "Starting stream..."
       stream "$url"
       ;;
     Download)
-      echo "Downloading..."
-      filename=$(echo " " | $menu_cmd --prompt "Save Path: " --print-query)
+      filename=$(echo " " | menu_cmd --prompt \"Save Path: \" --query \"${ep##*/}.mp4\" --print-query)
+      notify_cmd "Downloading to: $filename"
       download "$url" "$filename"
       ;;
   esac
