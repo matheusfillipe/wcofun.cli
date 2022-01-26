@@ -1,7 +1,12 @@
 #!/bin/bash
 # Matheus Fillipe Araújo Galvão  --- 25/01/2022
-# wcofun.com scraper
+# wcofun.com scraper MIT
 
+# TODO rofi
+# TODO save last json {anime: last_ep_number, anime....}
+# TODO save last searches to cache
+
+##########################################################################################
 # Things you might want to change:
 
 # Menu command
