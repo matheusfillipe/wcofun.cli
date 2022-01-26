@@ -7,7 +7,7 @@ Watch videos from wcofun.com directly from your terminal. You can search, stream
 ### Dependencies
  - [htmlq](https://github.com/mgdm/htmlq) to scrape easily with css selectors
  - [jq](https://stedolan.github.io/jq/download/) to parse json
- - [fzf](https://github.com/junegunn/fzf) to create the menus (You can change to [dmenu](https://tools.suckless.org/dmenu/) or [rofi](https://github.com/davatorium/rofi) so you decide)
+ - [fzf](https://github.com/junegunn/fzf) to create the menus (You can change on the script to [dmenu](https://tools.suckless.org/dmenu/) or [rofi](https://github.com/davatorium/rofi) so you decide)
  - curl, sed, awk, cut, tr and base64 are also used
 
 #### Arch Linux
