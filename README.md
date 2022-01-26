@@ -18,4 +18,11 @@ yay -S coreutils htmlq jq fzf  # htmlq is on the AUR
 ## Usage
 `./wcofun` or `./wocfun search query here`
 
+```
+./wcofun -h
+wcofun.cli
 
+Syntax:
+Search and stream or download one episode: wcofun [search query]
+Download all episodes: wcofun -d [search query]
+```

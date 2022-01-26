@@ -1,4 +1,6 @@
 #!/bin/bash
+# Matheus Fillipe Araújo Galvão  --- 25/01/2022
+# wcofun.com scraper
 
 # Things you might want to change:
 
@@ -132,14 +134,45 @@ choose_ep () {
   choose_menu "$list" "$titles"
 }
 
+all_eps () {
+  curl --silent "$1" \
+  -H 'authority: www.wcofun.com' \
+  -H 'pragma: no-cache' \
+  -H 'cache-control: no-cache' \
+  -H 'upgrade-insecure-requests: 1' \
+  -H "$ua" \
+  -H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9' \
+  -H 'sec-gpc: 1' \
+  -H 'sec-fetch-site: none' \
+  -H 'sec-fetch-mode: navigate' \
+  -H 'sec-fetch-user: ?1' \
+  -H 'sec-fetch-dest: document' \
+  -H 'accept-language: en-US,en;q=0.9' \
+  --compressed | htmlq '#sidebar_right3 a ' | tac
+}
+
 help() {
    echo "wcofun.cli"
    echo
-   echo "Syntax: wcofun [search query]"
+   echo "Syntax: "
+   echo "Search and stream or download one episode: wcofun [search query]"
+   echo "Download all episodes: wcofun -d [search query]"
    echo
 }
 
 main () {
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    help
+    exit 0
+  fi
+
+  # If first argument is -d, download all episodes
+  download=false
+  if [ "$1" = "-d" ]; then
+    shift
+    download=true
+  fi
+
   query="$*"
   if [ -z "$query" ]; then
     query=$(echo ' ' | $menu_cmd --prompt "Search query: " --print-query)
@@ -152,17 +185,33 @@ main () {
     exit 1
   fi
 
+  # Download all episodes
+  if [ "$download" = true ]; then
+    folder="${query// /_}"
+    mkdir -p "$folder"
+    echo "Downloading all episodes to $folder"
+    echo 
+    echo
+    all_eps "$anime" | while read -r line; do
+      ep=$(echo "$line" | htmlq 'a' -a href)
+      title=$(echo "$line" | htmlq 'a' -a title)
+      echo "Downloading: $title"
+      echo "Downloading: $ep"
+      url=$(get_link "$ep")
+      echo "Got link: $url"
+      download "$url" "$folder/$title.mp4"
+    done
+    exit 0
+  fi
+
   ep=$(choose_ep "$anime")
   if [ -z "$ep" ]; then
     exit 1
   fi
 
   opt=$(printf "%s\n%s" "Stream" "Download" | $menu_cmd)
-  if [ -z "$opt" ]; then
-    exit 1
-  fi
   url=$(get_link "$ep")
-  echo "URL: $url"
+  echo "Got link: $url"
   case $opt in
     Stream)
       echo "Streaming..."
