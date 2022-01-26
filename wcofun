@@ -7,16 +7,13 @@ menu_cmd="fzf"
 
 # User agent
 ua="user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
+##########################################################################################
 
 baseurl="https://www.wcofun.com/"
 
 trap exit INT
 
 chru() { printf "\\U$(printf '%08x' "$1")"; }
-
-search_menu () {
-  menu_cmd --prompt "Search query: "
-}
 
 choose_menu () {
   list=$1
@@ -109,8 +106,11 @@ search () {
     -H 'Referer: https://www.wcofun.com/' \
     -H 'accept-language: en-US,en;q=0.9' \
     --data-raw "catara=${1// /+}&konuara=series" \
-    --compressed | htmlq 'div.img') 
+    --compressed | htmlq 'div.img')
   titles=$(echo "$list" | htmlq 'img' -a alt)
+  if [ -z "$titles" ]; then
+    exit 1
+  fi
   choose_menu "$list" "$titles"
 }
 choose_ep () {
@@ -135,23 +135,20 @@ choose_ep () {
 help() {
    echo "wcofun.cli"
    echo
-   echo "Syntax: wcofun [-g|h|v|V]"
-   echo "options:"
-   echo "g     Print the GPL license notification."
-   echo "h     Print this Help."
-   echo "v     Verbose mode."
-   echo "V     Print software version and exit."
+   echo "Syntax: wcofun [search query]"
    echo
 }
 
 main () {
-  query="$1"
+  query="$*"
   if [ -z "$query" ]; then
-    query=$(search_menu)
+    query=$(echo ' ' | $menu_cmd --prompt "Search query: " --print-query)
   fi
+  echo "Searching for: $query"
+
   anime=$(search "$query")
   if [ -z "$anime" ]; then
-    echo "No results found"
+      echo "no results for $1"
     exit 1
   fi
 
@@ -160,12 +157,23 @@ main () {
     exit 1
   fi
 
+  opt=$(printf "%s\n%s" "Stream" "Download" | $menu_cmd)
+  if [ -z "$opt" ]; then
+    exit 1
+  fi
   url=$(get_link "$ep")
-  echo "Got link: $url"
-  stream "$url"
-  # mkdir -p /tmp/wcofun/
-  # video="/tmp/wcofun/${ep##*/}"
-  # download "$url" "$video"
+  echo "URL: $url"
+  case $opt in
+    Stream)
+      echo "Streaming..."
+      stream "$url"
+      ;;
+    Download)
+      echo "Downloading..."
+      filename=$(echo " " | $menu_cmd --prompt "Save Path: " --print-query)
+      download "$url" "$filename"
+      ;;
+  esac
 }
 
 main "$@"

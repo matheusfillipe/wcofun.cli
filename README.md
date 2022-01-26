@@ -16,5 +16,6 @@ yay -S coreutils htmlq jq fzf  # htmlq is on the AUR
 ```
 
 ## Usage
+`./wcofun` or `./wocfun search query here`
 
 
