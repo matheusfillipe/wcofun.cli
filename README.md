@@ -17,6 +17,7 @@ yay -S coreutils htmlq jq fzf  # htmlq is on the AUR
 
 ## Usage
 `./wcofun` or `./wocfun search query here`
+If you want to download all episodes: `./wcofun -d Search query here`
 
 ```
 ./wcofun -h

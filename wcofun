@@ -3,9 +3,6 @@
 # Matheus Fillipe --- 25/01/2022
 # wcofun.com scraper MIT
 
-# TODO save last searches to cache
-# TODO save last json {anime: last_ep_number, anime....}
-
 ##########################################################################################
 # Things you might want to change:
 
@@ -27,9 +24,37 @@ domainname="www.wcofun.com"
 
 storage="$HOME/.local/share/wcofun.cli/"
 
-mkdir -p "$storage"
+get_cache () {
+  if [ ! -f "$1" ]; then
+    echo '{}' > "$1"
+  fi
+  cat "$1"
+}
 
+get_cache_search () {
+  get_cache "$storage/search.json"
+}
+
+get_cache_episode () {
+  get_cache "$storage/episode.json"
+}
+
+save_cache() {
+  echo "$1" > "$2"
+}
+
+save_cache_search () {
+  save_cache "$1" "$storage/search.json"
+}
+
+save_cache_episode () {
+  save_cache "$1" "$storage/episode.json"
+}
+
+
+mkdir -p "$storage"
 trap exit INT
+
 menu_cmd () {
   case "$MENU_CMD" in
     "fzf"*)
@@ -38,14 +63,14 @@ menu_cmd () {
     "rofi"*)
       args=${*//--prompt/-p}
       args=${args//--query/-filter}
+      args=$(echo "$args" | sed -re 's/""(.+)""/"\1"/g')
       eval "$MENU_CMD $args"
       ;;
     "dmenu"*)
       args=${*//--prompt/-p}
       args=${args//--print-query/}
       args=${args//--query \"*\"/}
-      >&2 echo "dmenu"
-      >&2 echo "$MENU_CMD $args"
+      args=$(echo "$args" | sed -re 's/""(.+)""/"\1"/g')
       eval "$MENU_CMD $args"
       ;;
     *)
@@ -66,17 +91,6 @@ notify_cmd () {
 
 
 chru() { printf "\\U$(printf '%08x' "$1")"; }
-
-choose_menu () {
-  list=$1
-  titles=$2
-  choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd) 
-  if [ -z "$choosen" ]; then
-    return
-  fi
-  n=${choosen:0:1}
-  echo "$list" | htmlq 'a' -a href | awk 'NR=='"$n"
-}
 
 get_link() {
   link=$1
@@ -162,8 +176,24 @@ search () {
   if [ -z "$titles" ]; then
     exit 1
   fi
-  choose_menu "$list" "$titles"
+
+  anime=${1//-/_}
+  lastq="$(get_cache_search | jq '.'"${anime// /_}"'')"
+  if [ "$lastq" == "null" ]; then
+    choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd) 
+  else
+    choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd --query \""$lastq"\" )
+  fi
+
+  if [ -z "$choosen" ]; then
+    return
+  fi
+
+  save_cache_search "$(get_cache_search | jq '.'"${anime// /_}"' = "'"$choosen"'"')"
+  n=${choosen:0:1}
+  echo "$list" | htmlq 'a' -a href | awk 'NR=='"$n"
 }
+
 choose_ep () {
   list=$(curl --silent "$1" \
   -H "authority: $domainname" \
@@ -180,7 +210,30 @@ choose_ep () {
   -H 'accept-language: en-US,en;q=0.9' \
   --compressed | htmlq '#sidebar_right3 a' | tac)
   titles=$(echo "$list" | htmlq 'a' -a title)
-  choose_menu "$list" "$titles"
+
+  if [ -z "$titles" ]; then
+    exit 1
+  fi
+
+  choosen_anime=${1##*/}
+  choosen_anime=${choosen_anime//-/_}
+  lastq="$(get_cache_episode | jq '.'"$choosen_anime"'')"
+  if [ "$lastq" == "null" ]; then
+    choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd) 
+  else
+    n=${lastq:1:1}
+    n=$(($n + 1))
+    n="$n>"
+    choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd --query \""$n"\" )
+  fi
+
+  if [ -z "$choosen" ]; then
+    return
+  fi
+
+  save_cache_episode "$(get_cache_episode | jq '.'"$choosen_anime"' = "'"$choosen"'"')"
+  n=${choosen:0:1}
+  echo "$list" | htmlq 'a' -a href | awk 'NR=='"$n"
 }
 
 all_eps () {
@@ -224,13 +277,19 @@ main () {
 
   query="$*"
   if [ -z "$query" ]; then
-    query=$(echo ' ' | menu_cmd --prompt \"Search query: \" --print-query)
+    lastq=$(cat "$storage/lastq" 2>/dev/null)
+    if [ -z "$lastq" ]; then
+      query=$(echo ' ' | menu_cmd --prompt \"Search query: \" --print-query)
+    else
+      query=$(echo ' ' | menu_cmd --prompt \"Search query: \" --query \""$lastq"\" --print-query)
+    fi
   fi
+  echo "$query" > "$storage/lastq"
   echo "Searching for: $query"
 
   anime=$(search "$query")
   if [ -z "$anime" ]; then
-    notify_cmd "no results for $query"
+    notify_cmd "No results for: $query"
     exit 1
   fi
   echo "Selected anime: $anime"
@@ -272,7 +331,11 @@ main () {
       stream "$url"
       ;;
     Download)
-      filename=$(echo " " | menu_cmd --prompt \"Save Path: \" --query \"${ep##*/}.mp4\" --print-query)
+      filename=$(echo " " | menu_cmd --prompt \"Save Path: \" --query \""${ep##*/}.mp4"\" --print-query)
+      if [ -z "$filename" ]; then
+        notify_cmd "Canceled."
+        exit 0
+      fi
       notify_cmd "Downloading to: $filename"
       download "$url" "$filename"
       notify_cmd "Downlaod finished: $filename"
