@@ -124,6 +124,10 @@ get_link() {
     --compressed | jq -r '(.cdn + "/getvid?evid=" + .enc)'
 }
 
+get_num() {
+  echo "$1" | sed -re 's/^"*([[:digit:]]+)>.*$/\1/g'
+}
+
 download () {
   curl "$1" \
     -H 'Connection: keep-alive' \
@@ -190,7 +194,7 @@ search () {
   fi
 
   save_cache_search "$(get_cache_search | jq '.'"${anime// /_}"' = "'"$choosen"'"')"
-  n=${choosen:0:1}
+  n=$(get_num "$choosen")
   echo "$list" | htmlq 'a' -a href | awk 'NR=='"$n"
 }
 
@@ -221,8 +225,9 @@ choose_ep () {
   if [ "$lastq" == "null" ]; then
     choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd) 
   else
-    n=${lastq:1:1}
-    n=$(($n + 1))
+    n=$(get_num "$lastq")
+    >&2 echo "n=$n"
+    n=$((n + 1))
     n="$n>"
     choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd --query \""$n"\" )
   fi
@@ -232,7 +237,7 @@ choose_ep () {
   fi
 
   save_cache_episode "$(get_cache_episode | jq '.'"$choosen_anime"' = "'"$choosen"'"')"
-  n=${choosen:0:1}
+  n=$(get_num "$choosen")
   echo "$list" | htmlq 'a' -a href | awk 'NR=='"$n"
 }
 
