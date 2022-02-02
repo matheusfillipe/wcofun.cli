@@ -281,15 +281,19 @@ main () {
   fi
 
   query="$*"
+  query_file="$storage/lastq"
   if [ -z "$query" ]; then
-    lastq=$(cat "$storage/lastq" 2>/dev/null)
+    lastq=$(head -n 1 "$query_file")
     if [ -z "$lastq" ]; then
-      query=$(echo ' ' | menu_cmd --prompt \"Search query: \" --print-query)
+      query=$(cat "$query_file" 2>/dev/null | menu_cmd --prompt \"Search query: \" --print-query)
     else
-      query=$(echo ' ' | menu_cmd --prompt \"Search query: \" --query \""$lastq"\" --print-query)
+      query=$(cat "$query_file" 2>/dev/null | menu_cmd --prompt \"Search query: \" --query \""$lastq"\" --print-query)
     fi
   fi
-  echo "$query" > "$storage/lastq"
+  currentq=$(printf '%s\n%s' "$query" "$(cat "$query_file" 2>/dev/null)")
+  echo "$currentq" | sed -re '/^[[:space:]]*$/d' >> "$query_file.tmp"
+  uniq "$query_file.tmp" "$query_file"
+  rm "$query_file.tmp"
   echo "Searching for: $query"
 
   anime=$(search "$query")
