@@ -292,7 +292,7 @@ main () {
   fi
   currentq=$(printf '%s\n%s' "$query" "$(cat "$query_file" 2>/dev/null)")
   echo "$currentq" | sed -re '/^[[:space:]]*$/d' >> "$query_file.tmp"
-  uniq "$query_file.tmp" "$query_file"
+  awk '!x[$0]++' "$query_file.tmp" > "$query_file"
   rm "$query_file.tmp"
   echo "Searching for: $query"
 
