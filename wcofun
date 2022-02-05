@@ -156,6 +156,9 @@ stream () {
     -H 'Accept-Language: en-US,en;q=0.9' \
     -H 'Range: bytes=0-' \
     --compressed | mpv -
+  if [ $? -ne 0 ]; then
+    notify_cmd "Error: failed to get video"
+  fi
 }
 
 search () {
