@@ -141,6 +141,9 @@ download () {
     -H 'Accept-Language: en-US,en;q=0.9' \
     -H 'Range: bytes=0-' \
     --compressed --output "$2"
+  if [ $? -ne 0 ]; then
+    notify_cmd "Error: failed to get video"
+  fi
 }
 
 stream () {
@@ -229,8 +232,7 @@ choose_ep () {
     choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd) 
   else
     n=$(get_num "$lastq")
-    >&2 echo "n=$n"
-    n=$((n + 1))
+    # n=$((n + 1))
     n="$n>"
     choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd --query \""$n"\" )
   fi
