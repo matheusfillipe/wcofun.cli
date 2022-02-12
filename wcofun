@@ -7,13 +7,13 @@
 # Things you might want to change:
 
 # Menu command. Choose your menu:
-MENU_CMD="fzf"
-# MENU_CMD="rofi -dmenu -i"
+# MENU_CMD="fzf"
+MENU_CMD="rofi -dmenu -i"
 # MENU_CMD="dmenu"
 
 # If you are calling this from the terminal you probably dont want this
-# NOTIFY_CMD="notify-send WCOFUN"
-NOTIFY_CMD=""
+NOTIFY_CMD="notify-send WCOFUN"
+# NOTIFY_CMD=""
 
 # User agent. Maybe you have problems with this
 UA="User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0"
