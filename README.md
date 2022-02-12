@@ -27,3 +27,25 @@ Syntax:
 Search and stream or download one episode: wcofun [search query]
 Download all episodes: wcofun -d [search query]
 ```
+
+## Customization
+
+By default it will use fzf from a terminal and rofi if no terminal output is available. You can have a configuration file at `~/.wcofunrc` where you can export some relevant variables:
+
+```bash
+# MENU_CMD: Choose your menu command. Tested with dmenu, fzf and rofi only
+# NOTIFY_CMD. How to tell you about the status. Leave empty for a simple echo to stdout
+export MENU_CMD="fzf"
+export MENU_CMD="rofi -dmenu -i"
+# MENU_CMD="dmenu"
+export NOTIFY_CMD="notify-send WCOFUN"
+
+# User agent. Maybe you have problems so try changing this.
+export UA="User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0"
+
+# Maybe you want to use a proxy? (Helps when getting blocked by cloudflare, or if you want to debug)
+export CURL_EXTRA_PARAMS=""
+# CURL_EXTRA_PARAMS="-k --tlsv1 -x http://localhost:8080"
+export PRE_COMMAND=""
+# PRE_COMMAND="mitmdump 2>&1 /dev/null"
+```

@@ -20,6 +20,20 @@ else
 
 # User agent. Maybe you have problems with this
 UA="User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0"
+
+# Maybe you want to use a proxy? (Helps when getting blocked by cloudflare, or if you want to debug)
+CURL_EXTRA_PARAMS=""
+# CURL_EXTRA_PARAMS="-k --tlsv1 -x http://localhost:8080"
+PRE_COMMAND=""
+# PRE_COMMAND="mitmdump 2>&1 /dev/null"
+
+# if the config file exists, it will override the variables above
+if [ -f ~/.wcofunrc ]
+then
+  echo "Loading config file ~/.wcofunrc"
+  source ~/.wcofunrc
+fi
+
 ##########################################################################################
 
 baseurl="https://www.wcofun.com/"
@@ -54,9 +68,14 @@ save_cache_episode () {
   save_cache "$1" "$storage/episode.json"
 }
 
-
 mkdir -p "$storage"
-trap exit INT
+
+finalize (){
+  [ -n "$PRE_COMMAND" ] && kill %1
+  exit 0
+}
+
+trap finalize INT
 
 menu_cmd () {
   case "$MENU_CMD" in
@@ -97,7 +116,7 @@ chru() { printf "\\U$(printf '%08x' "$1")"; }
 get_link() {
   link=$1
   script=$(
-  curl --silent "$link" -H "$UA" --compressed | htmlq 'body > div:nth-child(3) > div.twelve.columns > div > div.fourteen.columns > div:nth-child(7) > script:nth-child(2)' | sed 's/<script>\(.*\)<\/script>/\1/')
+  curl --silent $CURL_EXTRA_PARAMS "$link" -H "$UA" --compressed | htmlq 'body > div:nth-child(3) > div.twelve.columns > div > div.fourteen.columns > div:nth-child(7) > script:nth-child(2)' | sed 's/<script>\(.*\)<\/script>/\1/')
   offset=$(echo "$script" | sed 's/.*- \([0-9]*\).*).*/\1/')
 
   innerscript=$(
@@ -109,9 +128,9 @@ get_link() {
   )
 
   url=$baseurl$(echo "$innerscript" | sed 's/^.*src="\([^"]*\)".*$/\1/')
-  url=$baseurl$(curl --silent -H "$UA" "$url" | grep "$.getJSON" | sed 's/^.*"\(.*\)".*$/\1/')
+  url=$baseurl$(curl --silent $CURL_EXTRA_PARAMS "$url" -H "$UA" | grep "$.getJSON" | sed 's/^.*"\(.*\)".*$/\1/')
 
-  curl --silent "$url" \
+  curl --silent $CURL_EXTRA_PARAMS  "$url" \
     -H "authority: $domainname" \
     -H 'pragma: no-cache' \
     -H 'cache-control: no-cache' \
@@ -169,11 +188,11 @@ stream () {
 
 search () {
   list=$(
-    curl "$baseurl/search" --silent \
+    curl --silent $CURL_EXTRA_PARAMS "$baseurl/search" \
     -X POST -H "$UA" \
     -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8' \
     -H 'Accept-Language: en-US,en;q=0.5' \
-    -H 'Accept-Encoding: gzip, deflate, br' \
+    -H 'Accept-Encoding: gzip, deflate' \
     -H 'Content-Type: application/x-www-form-urlencoded' \
     -H "Origin: $baseurl" \
     -H 'Connection: keep-alive' \
@@ -213,7 +232,7 @@ search () {
 }
 
 choose_ep () {
-  list=$(curl --silent "$1" \
+  list=$(curl --silent $CURL_EXTRA_PARAMS "$1" \
   -H "authority: $domainname" \
   -H 'pragma: no-cache' \
   -H 'cache-control: no-cache' \
@@ -255,7 +274,7 @@ choose_ep () {
 }
 
 all_eps () {
-  curl --silent "$1" \
+  curl --silent CURL_EXTRA_PARAMS "$1" \
   -H "authority: $domainname" \
   -H 'pragma: no-cache' \
   -H 'cache-control: no-cache' \
@@ -286,6 +305,12 @@ main () {
     exit 0
   fi
 
+  if [ -n "$PRE_COMMAND" ]
+  then
+    $PRE_COMMAND & 
+    sleep 2
+  fi
+
   # If first argument is -d, download all episodes
   download=false
   if [ "$1" = "-d" ]; then
@@ -312,12 +337,14 @@ main () {
   anime=$(search "$query")
   if [ -z "$anime" ]; then
     notify_cmd "No results for: $query"
+    [ -n "$PRE_COMMAND" ] && kill %1
     exit 1
   fi
   echo "Selected anime: $anime"
 
   # Download all episodes
   if [ "$download" = true ]; then
+    [ -n "$PRE_COMMAND" ] && kill %1
     folder="${query// /_}"
     mkdir -p "$folder"
     notify_cmd "Downloading all episodes to: $folder"
@@ -338,6 +365,7 @@ main () {
 
   ep=$(choose_ep "$anime")
   if [ -z "$ep" ]; then
+    [ -n "$PRE_COMMAND" ] && kill %1
     exit 1
   fi
   echo "Selected episode: $ep"
@@ -347,6 +375,7 @@ main () {
   url=$(get_link "$ep")
   echo "Got url: $url"
 
+  [ -n "$PRE_COMMAND" ] && kill %1
   case $opt in
     Stream)
       notify_cmd "Starting stream..."
