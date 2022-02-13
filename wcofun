@@ -111,7 +111,7 @@ notify_cmd () {
 }
 
 
-chru() { printf "\\U$(printf '%08x' "$1")"; }
+chru() { printf "\x$(printf %x "$1")"; }
 
 get_link() {
   link=$1
@@ -323,9 +323,9 @@ main () {
   if [ -z "$query" ]; then
     lastq=$(head -n 1 "$query_file")
     if [ -z "$lastq" ]; then
-      query=$(cat "$query_file" 2>/dev/null | menu_cmd --prompt \"Search query: \" --print-query | head -1)
+      query=$(cat "$query_file" 2>/dev/null | menu_cmd --prompt \"Search query: \" | head -1)
     else
-      query=$(cat "$query_file" 2>/dev/null | menu_cmd --prompt \"Search query: \" --query \""$lastq"\" --print-query | head -1)
+      query=$(cat "$query_file" 2>/dev/null | menu_cmd --prompt \"Search query: \" --query \""$lastq"\" | head -1)
     fi
   fi
   currentq=$(printf '%s\n%s' "$query" "$(cat "$query_file" 2>/dev/null)")

@@ -18,7 +18,9 @@ yay -S coreutils htmlq jq fzf mpv  # htmlq is on the AUR
 
 #### OSX
 
+```bash
 brew install coreutils htmlq jq fzf tac mpv
+```
 
 
 ## Usage
