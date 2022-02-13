@@ -8,18 +8,17 @@ Watch videos from wcofun.com directly from your terminal. You can search, stream
  - [htmlq](https://github.com/mgdm/htmlq) to scrape easily with css selectors
  - [jq](https://stedolan.github.io/jq/download/) to parse json
  - [fzf](https://github.com/junegunn/fzf) to create the menus (You can change on the script to [dmenu](https://tools.suckless.org/dmenu/) or [rofi](https://github.com/davatorium/rofi) so you decide)
- - curl, sed, awk, cut, tr and base64 are also used
+ - curl, sed, awk, cut, tr, tac and base64 are also used (coreutils)
+ - mpv is hardcoded to be the stream player since you can pipe curl to it.
 
 #### Arch Linux
 ```bash
-yay -S coreutils htmlq jq fzf  # htmlq is on the AUR
+yay -S coreutils htmlq jq fzf mpv  # htmlq is on the AUR
 ```
 
 #### OSX
 
-```bash 
-brew install coreutils htmlq jq fzf tac
-```
+brew install coreutils htmlq jq fzf tac mpv
 
 
 ## Usage
