@@ -217,9 +217,9 @@ search () {
   anime=${1//-/_}
   lastq="$(get_cache_search | jq '.'"${anime// /_}"'')"
   if [ "$lastq" == "null" ]; then
-    choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd) 
+    choosen=$(echo "$titles" | awk '{print NR  "> " $0}' | menu_cmd) 
   else
-    choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd --query \""$lastq"\" )
+    choosen=$(echo "$titles" | awk '{print NR  "> " $0}' | menu_cmd --query \""$lastq"\" )
   fi
 
   if [ -z "$choosen" ]; then
