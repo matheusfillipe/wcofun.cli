@@ -18,7 +18,7 @@ yay -S coreutils htmlq jq fzf  # htmlq is on the AUR
 #### OSX
 
 ```bash 
-brew install coreutils htmlq jq fzf
+brew install coreutils htmlq jq fzf tac
 ```
 
 
