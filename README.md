@@ -15,6 +15,13 @@ Watch videos from wcofun.com directly from your terminal. You can search, stream
 yay -S coreutils htmlq jq fzf  # htmlq is on the AUR
 ```
 
+#### OSX
+
+```bash 
+brew install coreutils htmlq jq fzf
+```
+
+
 ## Usage
 `./wcofun` or `./wocfun search query here`
 If you want to download all episodes: `./wcofun -d Search query here`
@@ -49,3 +56,13 @@ export CURL_EXTRA_PARAMS=""
 export PRE_COMMAND=""
 # PRE_COMMAND="mitmdump 2>&1 /dev/null"
 ```
+
+## No results problem
+
+If you are getting no results for everything you are probably being blocked by cloudflare. Install a proxy like `mitmproxy` : `pacman -S mitmproxy` or `brew install mitmproxy` and create a config like:
+
+```bash
+CURL_EXTRA_PARAMS="-k --tlsv1 -x http://localhost:8080"
+PRE_COMMAND="mitmdump 2>&1 /dev/null"
+```
+I have no idea why that makes it work so if you have a solution that doesn't need a web proxy would be cool

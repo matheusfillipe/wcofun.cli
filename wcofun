@@ -68,13 +68,13 @@ save_cache_episode () {
   save_cache "$1" "$storage/episode.json"
 }
 
-mkdir -p "$storage"
 
 finalize (){
   [ -n "$PRE_COMMAND" ] && kill %1
   exit 0
 }
 
+mkdir -p "$storage"
 trap finalize INT
 
 menu_cmd () {
@@ -256,12 +256,12 @@ choose_ep () {
   choosen_anime=${choosen_anime//-/_}
   lastq="$(get_cache_episode | jq '.'"$choosen_anime"'')"
   if [ "$lastq" == "null" ]; then
-    choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd) 
+    choosen=$(echo "$titles" | awk '{print NR  "> " $0}' | menu_cmd) 
   else
     n=$(get_num "$lastq")
     # n=$((n + 1))
     n="$n>"
-    choosen=$(echo "$titles" | awk '{print NR  "> " $s}' | menu_cmd --query \""$n"\" )
+    choosen=$(echo "$titles" | awk '{print NR  "> " $0}' | menu_cmd --query \""$n"\" )
   fi
 
   if [ -z "$choosen" ]; then
