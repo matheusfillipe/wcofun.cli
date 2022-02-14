@@ -11,9 +11,25 @@ Watch videos from wcofun.com directly from your terminal. You can search, stream
  - curl, sed, awk, cut, tr, tac and base64 are also used (coreutils)
  - mpv is hardcoded to be the stream player since you can pipe curl to it.
 
+#### Ubuntu
+```bash
+sudo apt install coreutils jq fzf rofi mpv -y
+```
+Unfortunately you will still need htmlq that can be either installed with cargo:
+```bash
+cargo install htmlq
+```
+Or downloaded from their releases page and put on your path:
+```bash
+# Notice this might not be the earliest version!
+wget https://github.com/mgdm/htmlq/releases/download/v0.4.0/htmlq-x86_64-linux.tar.gz
+tar -xvzf htmlq-x86_64-linux.tar.gz
+sudo cp htmlq /usr/bin/  # or anywhere in your path
+```
+
 #### Arch Linux
 ```bash
-yay -S coreutils htmlq jq fzf mpv  # htmlq is on the AUR
+yay -S coreutils htmlq jq fzf rofi mpv  # htmlq is on the AUR
 ```
 
 #### OSX
@@ -85,3 +101,4 @@ rm -r libssl
 # And finally run it like:
 LD_LIBRARY_PATH=~/curlibs wcofun
 ```
+Or you can add `export LD_LIBRARY_PATH=~/curlibs` to your `~/.wcofunrc`.
