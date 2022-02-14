@@ -22,7 +22,6 @@ yay -S coreutils htmlq jq fzf mpv  # htmlq is on the AUR
 brew install coreutils htmlq jq fzf mpv
 ```
 
-
 ## Usage
 `./wcofun` or `./wocfun search query here`
 If you want to download all episodes: `./wcofun -d Search query here`
@@ -52,7 +51,7 @@ export NOTIFY_CMD="notify-send WCOFUN"
 export UA="User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0"
 
 # Maybe you want to use a proxy? (Helps when getting blocked by cloudflare, or if you want to debug)
-export CURL_EXTRA_PARAMS=""
+export CURL_EXTRA_PARAMS=""  # this option is not used for stream and download
 # CURL_EXTRA_PARAMS="-k --tlsv1 -x http://localhost:8080"
 export PRE_COMMAND=""
 # PRE_COMMAND="mitmdump 2>&1 /dev/null"
@@ -60,10 +59,29 @@ export PRE_COMMAND=""
 
 ## No results problem
 
-If you are getting no results for everything you are probably being blocked by cloudflare. Install a proxy like `mitmproxy` : `pacman -S mitmproxy` or `brew install mitmproxy` and create a config like:
+If you are getting no results for everything you are probably being blocked by cloudflare. Here are some solutions for this:
+
+1. Install a proxy like `mitmproxy` : `pacman -S mitmproxy` or `brew install mitmproxy` and create a config like:
 
 ```bash
 CURL_EXTRA_PARAMS="-k --tlsv1 -x http://localhost:8080"
 PRE_COMMAND="mitmdump 2>&1 /dev/null"
+
+This will launch the proxy locally before wcofun search starts.
 ```
-I have no idea why that makes it work so if you have a solution that doesn't need a web proxy would be cool
+2. If you are on linux I've found out that this is due to the newer version of openssl that is somehow detected by cloudflare. You can get ubuntu's 20.04 `libssl.so.1.1` from a ubuntu machine or from [here](http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f26). Extract the library from it, and launch wcofun setting `LD_LIBRARY_PATH` accordingly.
+
+```bash
+mkdir libssl
+cd libssl
+wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
+ar xar x libssl1.1_1.1.1f-1ubuntu2_amd64.deb
+tar xf data.tar.xz
+mkdir -p ~/curlibs
+cp usr/lib/x86_64-linux-gnu/libssl.so.1.1 ~/curlibs
+cd ..
+rm -r libssl
+
+# And finally run it like:
+LD_LIBRARY_PATH=~/curlibs wcofun
+```

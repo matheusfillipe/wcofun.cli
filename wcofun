@@ -274,7 +274,7 @@ choose_ep () {
 }
 
 all_eps () {
-  curl --silent CURL_EXTRA_PARAMS "$1" \
+  curl --silent $CURL_EXTRA_PARAMS "$1" \
   -H "authority: $domainname" \
   -H 'pragma: no-cache' \
   -H 'cache-control: no-cache' \
@@ -307,8 +307,10 @@ main () {
 
   if [ -n "$PRE_COMMAND" ]
   then
-    $PRE_COMMAND & 
-    sleep 2
+    echo "Launching: $PRE_COMMAND"
+    eval "$PRE_COMMAND & "
+    # Bad hack but....
+    sleep 3
   fi
 
   # If first argument is -d, download all episodes
@@ -344,7 +346,6 @@ main () {
 
   # Download all episodes
   if [ "$download" = true ]; then
-    [ -n "$PRE_COMMAND" ] && kill %1
     folder="${query// /_}"
     mkdir -p "$folder"
     notify_cmd "Downloading all episodes to: $folder"
@@ -359,6 +360,7 @@ main () {
       echo "Got link: $url"
       download "$url" "$folder/$title.mp4"
     done
+    [ -n "$PRE_COMMAND" ] && kill %1
     notify_cmd "Download finished: $folder"
     exit 0
   fi
