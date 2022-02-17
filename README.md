@@ -80,11 +80,13 @@ If you are getting no results for everything you are probably being blocked by c
 1. Install a proxy like `mitmproxy` : `pacman -S mitmproxy` or `brew install mitmproxy` and create a config like:
 
 ```bash
-CURL_EXTRA_PARAMS="-k --tlsv1 -x http://localhost:8080"
-PRE_COMMAND="mitmdump 2>&1 /dev/null"
+export CURL_EXTRA_PARAMS="-k --tlsv1 -x http://localhost:8080"
+export PRE_COMMAND="mitmdump 2>&1 /dev/null"
 
-This will launch the proxy locally before wcofun search starts.
 ```
+This will launch the proxy locally before wcofun search starts.
+
+
 2. If you are on linux I've found out that this is due to the newer version of openssl that is somehow detected by cloudflare. You can get ubuntu's 20.04 `libssl.so.1.1` from a ubuntu machine or from [here](http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f26). Extract the library from it, and launch wcofun setting `LD_LIBRARY_PATH` accordingly.
 
 ```bash

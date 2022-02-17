@@ -308,7 +308,7 @@ main () {
   if [ -n "$PRE_COMMAND" ]
   then
     echo "Launching: $PRE_COMMAND"
-    eval "$PRE_COMMAND & "
+    eval "$PRE_COMMAND &"
     # Bad hack but....
     sleep 3
   fi
