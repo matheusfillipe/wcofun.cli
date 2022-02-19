@@ -2,6 +2,19 @@
 
 Watch videos from wcofun.com directly from your terminal. You can search, stream and download videos or playlists. You can also continue from the episode where you were left of.
 
+
+* [Installation](#installation)
+  * [Dependencies](#dependencies)
+    * [Ubuntu](#ubuntu)
+    * [Arch Linux](#arch-linux)
+    * [OSX](#osx)
+* [Usage](#usage)
+* [Customization](#customization)
+* [No results problem](#no-results-problem)
+  * [1. Proxy](#1.-proxy)
+  * [2. Ubuntu's openssl 1.1.1f](#2.-ubuntu's-openssl-1.1.1f)
+  * [3. [https://github.com/lwthiker/curl-impersonate](https://github.com/lwthiker/curl-impersonate)](#3.-[https://github.com/lwthiker/curl-impersonate](https://github.com/lwthiker/curl-impersonate))
+
 ## Installation
 
 ### Dependencies
@@ -75,9 +88,11 @@ export PRE_COMMAND=""
 
 ## No results problem
 
-If you are getting no results for everything you are probably being blocked by cloudflare. Here are some solutions for this:
+If you are getting no results for everything you are probably being blocked by cloudflare. This problem happens because curl's tls handshake is not the same as a browser's one. Here are some solutions for this:
 
-1. Install a proxy like `mitmproxy` : `pacman -S mitmproxy` or `brew install mitmproxy` and create a config like:
+### 1. Proxy
+
+ Install a proxy like `mitmproxy` : `pacman -S mitmproxy` or `brew install mitmproxy` and create a config like:
 
 ```bash
 export CURL_EXTRA_PARAMS="-k --tlsv1 -x http://localhost:8080"
@@ -87,7 +102,9 @@ export PRE_COMMAND="mitmdump 2>&1 /dev/null"
 This will launch the proxy locally before wcofun search starts.
 
 
-2. If you are on linux I've found out that this is due to the newer version of openssl that is somehow detected by cloudflare. You can get ubuntu's 20.04 `libssl.so.1.1` from a ubuntu machine or from [here](http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f26). Extract the library from it, and launch wcofun setting `LD_LIBRARY_PATH` accordingly.
+### 2. Ubuntu's openssl 1.1.1f
+
+If you are on linux I've found out that this is due to the newer version of openssl that is somehow detected by cloudflare. You can get ubuntu's 20.04 `libssl.so.1.1` from a ubuntu machine or from [here](http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f26). Extract the library from it, and launch wcofun setting `LD_LIBRARY_PATH` accordingly.
 
 ```bash
 mkdir libssl
@@ -105,7 +122,9 @@ LD_LIBRARY_PATH=~/curlibs wcofun
 ```
 Or you can add `export LD_LIBRARY_PATH=~/curlibs` to your `~/.wcofunrc`.
 
-3. Use: [https://github.com/lwthiker/curl-impersonate](https://github.com/lwthiker/curl-impersonate)
+### 3. Curl impersonate
+
+* [https://github.com/lwthiker/curl-impersonate](https://github.com/lwthiker/curl-impersonate)
 
 Build this project as described on their readme choosing either firefox or chrome, copy the built curl executable to somewhere on your system and set `CURL_PATH` to it.
 
