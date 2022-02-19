@@ -104,3 +104,25 @@ rm -r libssl
 LD_LIBRARY_PATH=~/curlibs wcofun
 ```
 Or you can add `export LD_LIBRARY_PATH=~/curlibs` to your `~/.wcofunrc`.
+
+3. Use: [https://github.com/lwthiker/curl-impersonate](https://github.com/lwthiker/curl-impersonate)
+
+Build this project as described on their readme choosing either firefox or chrome, copy the built curl executable to somewhere on your system and set `CURL_PATH` to it.
+
+``` bash
+git clone --depth=1 https://github.com/lwthiker/curl-impersonate
+cd curl-impersonate
+docker build -t curl-impersonate-chrome chrome/
+
+# Wait for a while and let's check it out
+docker run -it curl-impersonate-chrome /bin/bash
+ls /build/out
+```
+
+If you see `curl-impersonate  curl_chrome98 ` means it worked. Don't close the container shell, from another terminal type:
+
+```bash
+docker cp curl-impersonate-chrome:/build/out/curl-impersonate /some/important/path/curl-impersonate
+```
+
+Now just set `CURL_PATH="/some/important/path/curl-impersonate"` on your `~/.wcofunrc`
