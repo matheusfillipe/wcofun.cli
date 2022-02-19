@@ -3,21 +3,31 @@
 Watch videos from wcofun.com directly from your terminal. You can search, stream and download videos or playlists. You can also continue from the episode where you were left of.
 
 
-* [Installation](#installation)
-  * [Dependencies](#dependencies)
-    * [Ubuntu](#ubuntu)
-    * [Arch Linux](#arch-linux)
-    * [OSX](#osx)
-* [Usage](#usage)
-* [Customization](#customization)
-* [No results problem](#no-results-problem)
-  * [1. Proxy](#1.-proxy)
-  * [2. Ubuntu's openssl 1.1.1f](#2.-ubuntu's-openssl-1.1.1f)
-  * [3. [https://github.com/lwthiker/curl-impersonate](https://github.com/lwthiker/curl-impersonate)](#3.-[https://github.com/lwthiker/curl-impersonate](https://github.com/lwthiker/curl-impersonate))
+1. [Installation](#installation)
+   * [Dependencies](#dependencies)
+     * [Ubuntu](#ubuntu)
+     * [Arch Linux](#arch-linux)
+     * [OSX](#osx)
+2. [Usage](#usage)
+3. [Customization](#customization)
+4. [No results problem](#no-results-problem)
+   * [1. Proxy](#1.-proxy)
+   * [2. Ubuntu's openssl 1.1.1f](#2.-ubuntu's-openssl-1.1.1f)
+   * [3. Curl impersonate](#3.-curl-impersonate)
+
 
 ## Installation
 
+Just download [wcofun](https://raw.githubusercontent.com/matheusfillipe/wcofun.cli/master/wcofun) script, install the dependencies listed bellow and run it.
+
+```bash
+wget https://raw.githubusercontent.com/matheusfillipe/wcofun.cli/master/wcofun
+chmod +x wcofun
+./wcofun
+```
+
 ### Dependencies
+ - bash shell
  - [htmlq](https://github.com/mgdm/htmlq) to scrape easily with css selectors
  - [jq](https://stedolan.github.io/jq/download/) to parse json
  - [fzf](https://github.com/junegunn/fzf) to create the menus (You can change on the script to [dmenu](https://tools.suckless.org/dmenu/) or [rofi](https://github.com/davatorium/rofi) so you decide)
@@ -138,7 +148,9 @@ docker run -it curl-impersonate-chrome /bin/bash
 ls /build/out
 ```
 
-If you see `curl-impersonate  curl_chrome98 ` means it worked. Don't close the container shell, from another terminal type:
+If you see `curl-impersonate  curl_chrome98 ` means it worked. Don't close the container shell yet.
+
+rom another terminal type:
 
 ```bash
 docker cp curl-impersonate-chrome:/build/out/curl-impersonate /some/important/path/curl-impersonate
