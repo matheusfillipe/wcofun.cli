@@ -51,8 +51,23 @@ sudo cp htmlq /usr/bin/  # or anywhere in your path
 ```
 
 #### Arch Linux
+
+You can install from the AUR: https://aur.archlinux.org/packages/wcofun
+
 ```bash
-yay -S coreutils htmlq jq fzf rofi mpv  # htmlq is on the AUR
+yay -S wcofun
+```
+
+Or if you download the script you can get the dependencies with:
+
+```bash
+yay -S coreutils mpv htmlq jq fzf rofi  # htmlq is on the AUR
+```
+
+To avoid "Not found" problems:
+
+```bash
+yay -S curl-impersonate-chrome
 ```
 
 #### OSX
@@ -66,12 +81,27 @@ brew install coreutils htmlq jq fzf mpv
 If you want to download all episodes: `./wcofun -d Search query here`
 
 ```
-./wcofun -h
-wcofun.cli
-
+                     WCOFUN.CLI
+---------------------------------------------------------------------------------
 Syntax:
-Search and stream or download one episode: wcofun [search query]
-Download all episodes: wcofun -d [search query]
+  /home/matheus/Projects/wcofun/wcofun [-n] [-s | -D | -d [range]] [search query]
+  All parameters are optional.
+
+Example:
+  Search and stream or download one episode: wcofun [search query]
+  Download all episodes: wcofun -D [search query]
+  Watch next episode: wcofun -n
+
+Options:
+  -D: Download all episodes of selected anime.
+  -d [ep-number|start-end]: Download a range of episodes by specifying the beginning and end. You can also specify a single episode number or a range like n- to download all starting from the nth or -n to download all until the nth. An empty range (-) will cause cause it to prompt for the episode number and then download.
+  -s: Stream selectped episode
+  -n: Play next episode of lastly watched anime
+  -p: Play previous episode of lastly watched anime
+  -P [command]: Pre execution command. Useful for launching an http proxy.
+  -e: Edit config with nvim
+  -c: Edit cached searches with nvim
+  -h: Show this help
 ```
 
 ## Customization
