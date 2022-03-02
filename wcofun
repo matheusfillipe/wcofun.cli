@@ -21,8 +21,16 @@ else
 # User agent. Maybe you have problems with this
 UA="User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0"
 
-# Use system's curl by default
-CURL_PATH=$(which curl)
+# Use system's curl if curl-impersonate is not found
+for curl in \
+  curl-impersonate \
+  curl-impersonate-chrome \
+  curl-impersonate-firefox \
+  curl
+do
+    hash "$curl" &>/dev/null && break
+done 
+CURL_PATH="$curl"
 
 # Maybe you want to use a proxy? (Helps when getting blocked by cloudflare, or if you want to debug)
 CURL_EXTRA_PARAMS=""
@@ -30,18 +38,32 @@ CURL_EXTRA_PARAMS=""
 PRE_COMMAND=""
 # PRE_COMMAND="mitmdump 2>&1 /dev/null"
 
+
+CONFIG_FILE=~/.wcofunrc 
+
 ##########################################################################################
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+WHITE='\033[1;37m'
+BLUE='\033[0;34m'
+BROWN='\033[0;33m'
+PURPLE='\033[0;35m'
+NC='\033[0m'
+
+red()(set -o pipefail;"$@" 2>&1>&3|sed $'s,.*,\e[31m&\e[m,'>&2)3>&1
 
 # if the config file exists, it will override the variables above
 if [ -f ~/.wcofunrc ]
 then
   echo "Loading config file ~/.wcofunrc"
-  source ~/.wcofunrc
+  source "$CONFIG_FILE"
 fi
 
 if [ -z "$CURL_PATH" ]
 then
-  echo "curl executable not found. You need to set CURL_PATH or install curl"
+   echo -e "${RED}Curl executable not found. You need to set CURL_PATH or install curl{$NC}"
   exit 1
 fi
 
@@ -65,6 +87,10 @@ get_cache_episode () {
   get_cache "$storage/episode.json"
 }
 
+get_cache_series_url () {
+  get_cache "$storage/series_url.json"
+}
+
 save_cache() {
   echo "$1" > "$2"
 }
@@ -75,6 +101,10 @@ save_cache_search () {
 
 save_cache_episode () {
   save_cache "$1" "$storage/episode.json"
+}
+
+save_cache_series_url () {
+  save_cache "$1" "$storage/series_url.json"
 }
 
 
@@ -237,10 +267,13 @@ search () {
 
   save_cache_search "$(get_cache_search | jq '.'"${anime// /_}"' = "'"$choosen"'"')"
   n=$(get_num "$choosen")
-  echo "$list" | htmlq 'a' -a href | awk 'NR=='"$n"
+  anime=$(echo "$list" | htmlq 'a' -a href | awk 'NR=='"$n")
+  save_cache_series_url "$(get_cache_series_url | jq '.'"${query// /_}"' = "'"$anime"'"')"
+  echo "$anime"
 }
 
 choose_ep () {
+  offset=$2
   list=$("$CURL_PATH" --silent $CURL_EXTRA_PARAMS "$1" \
   -H "authority: $domainname" \
   -H 'pragma: no-cache' \
@@ -268,9 +301,15 @@ choose_ep () {
     choosen=$(echo "$titles" | awk '{print NR  "> " $0}' | menu_cmd) 
   else
     n=$(get_num "$lastq")
-    # n=$((n + 1))
-    n="$n>"
-    choosen=$(echo "$titles" | awk '{print NR  "> " $0}' | menu_cmd --query \""$n"\" )
+    if [ -n "$offset" ]; then
+      >&2 echo "offset=$offset"
+      >&2 echo "n=$n"
+      n=$((n + offset))
+      choosen="$n> $(echo "$titles" | sed "${n}q;d")"
+    else
+      n="$n>"
+      choosen=$(echo "$titles" | awk '{print NR  "> " $0}' | menu_cmd --query \""$n"\" )
+    fi
   fi
 
   if [ -z "$choosen" ]; then
@@ -299,20 +338,155 @@ all_eps () {
   --compressed | htmlq '#sidebar_right3 a ' | tac
 }
 
+download_many () {
+  query=$1
+  anime=$2
+  download_range=$3
+
+  folder="${query// /_}"
+  mkdir -p "$folder"
+  eps=$(all_eps "$anime")
+  if [ -n "$download_range" ]; then
+    start=${download_range/-*/}
+    end=${download_range/*-/}
+    if [ -z "$end" ]; then
+      end=$(echo "$eps" | wc -l)
+    fi
+    if [ -z "$start" ]; then
+      start=1
+    fi
+    re='^[0-9]+$'
+    if ! [[ $start =~ $re ]] ; then
+       echo -e "${RED}Invalid range! \"$start\" Not a number ${NC}" >&2; 
+       exit 1
+    fi
+    if ! [[ $end =~ $re ]] ; then
+       echo -e "${RED}Invalid range! \"$end\" Not a number ${NC}" >&2; 
+       exit 1
+    fi
+    notify_cmd "Downloading from episode $start to $end into: $folder"
+  else
+    start=1
+    end=$(echo "$eps" | wc -l)
+    notify_cmd "Downloading all episodes to: $folder"
+  fi
+  counter=0
+  echo 
+  echo
+  echo "$eps" | while read -r line; do
+    counter=$((counter+1))
+    if [ $counter -lt "$start" ]; then
+      continue
+    fi
+    if [ $counter -gt "$end" ]; then
+      break
+    fi
+    ep=$(echo "$line" | htmlq 'a' -a href)
+    title=$(echo "$line" | htmlq 'a' -a title)
+    echo "Downloading: $title"
+    echo "Episode url: $ep"
+    url=$(get_link "$ep")
+    echo "Got link: $url"
+    download "$url" "$folder/$title.mp4"
+  done
+}
+
 help() {
-   echo "wcofun.cli"
+   echo 
+   echo -e "                     ${GREEN}WCOFUN.CLI${NC}"
+   echo -e "${BLUE}---------------------------------------------------------------------------------${NC}"
+   echo -e "${PURPLE}Syntax: ${NC}"
+   echo -e "  ${WHITE}$0${NC} [-n] [${BROWN}-s${NC} | ${BLUE}-D${NC} | ${RED}-d [range]${NC}] ${GREEN}[search query]${NC}"
+   echo -e "  All parameters are optional."
    echo
-   echo "Syntax: "
-   echo "Search and stream or download one episode: wcofun [search query]"
-   echo "Download all episodes: wcofun -d [search query]"
+   echo -e "${PURPLE}Example: ${NC}"
+   echo -e "  Search and stream or download one episode: wcofun ${GREEN}[search query]${NC}"
+   echo -e "  Download all episodes: wcofun -D ${GREEN}[search query]${NC}"
+   echo -e "  Watch next episode: wcofun -n"
+   echo
+   echo -e "${PURPLE}Options: ${NC}"
+   echo -e "  ${GREEN}-D:${NC} Download all episodes of selected anime."
+   echo -e "  ${GREEN}-d [ep-number|start-end]:${NC} Download a range of episodes by specifying the beginning and end. You can also specify a single episode number or a range like n- to download all starting from the nth or -n to download all until the nth. An empty range (-) will cause cause it to prompt for the episode number and then download."
+   echo -e "  ${GREEN}-s:${NC} Stream selectped episode"
+   echo -e "  ${GREEN}-n:${NC} Play next episode of lastly watched anime"
+   echo -e "  ${GREEN}-p:${NC} Play previous episode of lastly watched anime"
+   echo -e "  ${GREEN}-P [command]:${NC} Pre execution command. Useful for launching an http proxy."
+   echo -e "  ${GREEN}-e:${NC} Edit config with $EDITOR"
+   echo -e "  ${GREEN}-c:${NC} Edit cached searches with $EDITOR"
+   echo -e "  ${GREEN}-h:${NC} Show this help"
    echo
 }
 
-main () {
-  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    help
-    exit 0
+parse_opts () {
+  download=false
+  stream_ep=false
+  next_ep=false
+  previous_ep=false
+  download_range=""
+
+  while getopts "hP:d:Dsecnp" o; do
+      case "${o}" in
+          \?)
+              echo -e "${RED}Invalid option or missing argument: $OPTARG${NC}"
+              echo
+              help
+              exit 1
+              ;;
+          h)
+              help
+              exit 0
+              ;;
+          d)
+            download_range=${OPTARG}
+            if [ "$download_range" == "-" ]; then
+              download=false
+            else
+              download=true
+            fi
+            ;;
+          s)
+            stream_ep=true
+            ;;
+          e)
+            $EDITOR $CONFIG_FILE
+            exit 0
+            ;;
+          c)
+            $EDITOR "$storage/lastq"
+            exit 0
+            ;;
+          n)
+            next_ep=true
+            ;;
+          p)
+            previous_ep=true
+            ;;
+          D)
+            download=true
+          ;;
+          P)
+              PRE_COMMAND=${OPTARG}
+              ;;
+          *)
+            ;;
+      esac
+  done
+
+  if [[ $next_ep = true && $previous_ep = true ]]; then
+    echo -e "${RED}You should either watch the next or the previous episode${NC}" >&2
+    exit 1
   fi
+  if [[ $download = true && $stream_ep = true ]]; then
+    echo -e "${RED}You should either download or stream${NC}" >&2
+    exit 1
+  fi
+
+  shift $((OPTIND - 1))
+  query="$@"
+}
+
+main () {
+  parse_opts "$@"
 
   if [ -n "$PRE_COMMAND" ]
   then
@@ -322,66 +496,66 @@ main () {
     sleep 3
   fi
 
-  # If first argument is -d, download all episodes
-  download=false
-  if [ "$1" = "-d" ]; then
-    shift
-    download=true
-  fi
-
-  query="$*"
-  query_file="$storage/lastq"
-  if [ -z "$query" ]; then
+  if [[ "$next_ep" = true || "$previous_ep" = true ]]; then
+    query_file="$storage/lastq"
     lastq=$(head -n 1 "$query_file")
-    if [ -z "$lastq" ]; then
-      query=$(cat "$query_file" 2>/dev/null | menu_cmd --prompt \"Search query: \" --print-query | head -1)
-    else
-      query=$(cat "$query_file" 2>/dev/null | menu_cmd --prompt \"Search query: \" --query \""$lastq"\" --print-query | head -1)
+    query=${lastq//-/_}
+    anime="$(get_cache_series_url | jq '.'"${query// /_}"'')"
+    anime=${anime//\"/}
+  else
+    query_file="$storage/lastq"
+    if [ -z "$query" ]; then
+      lastq=$(head -n 1 "$query_file")
+      if [ -z "$lastq" ]; then
+        query=$(cat "$query_file" 2>/dev/null | menu_cmd --prompt \"Search query: \" --print-query | head -1)
+      else
+        query=$(cat "$query_file" 2>/dev/null | menu_cmd --prompt \"Search query: \" --query \""$lastq"\" --print-query | head -1)
+      fi
     fi
-  fi
-  currentq=$(printf '%s\n%s' "$query" "$(cat "$query_file" 2>/dev/null)")
-  echo "$currentq" | sed -re '/^[[:space:]]*$/d' >> "$query_file.tmp"
-  awk '!x[$0]++' "$query_file.tmp" > "$query_file"
-  rm "$query_file.tmp"
-  echo "Searching for: $query"
+    currentq=$(printf '%s\n%s' "$query" "$(cat "$query_file" 2>/dev/null)")
+    echo "$currentq" | sed -re '/^[[:space:]]*$/d' >> "$query_file.tmp"
+    awk '!x[$0]++' "$query_file.tmp" > "$query_file"
+    rm "$query_file.tmp"
+    echo "Searching for: $query"
 
-  anime=$(search "$query")
-  if [ -z "$anime" ]; then
-    notify_cmd "No results for: $query"
-    [ -n "$PRE_COMMAND" ] && kill %1
-    exit 1
+    anime=$(search "$query")
+    if [ -z "$anime" ]; then
+      notify_cmd "No results for: $query"
+      [ -n "$PRE_COMMAND" ] && kill %1
+      exit 1
+    fi
   fi
   echo "Selected anime: $anime"
 
-  # Download all episodes
+
+  # Download episodes range
   if [ "$download" = true ]; then
-    folder="${query// /_}"
-    mkdir -p "$folder"
-    notify_cmd "Downloading all episodes to: $folder"
-    echo 
-    echo
-    all_eps "$anime" | while read -r line; do
-      ep=$(echo "$line" | htmlq 'a' -a href)
-      title=$(echo "$line" | htmlq 'a' -a title)
-      echo "Downloading: $title"
-      echo "Episode url: $ep"
-      url=$(get_link "$ep")
-      echo "Got link: $url"
-      download "$url" "$folder/$title.mp4"
-    done
+    download_many "$query" "$anime" "$download_range"
     [ -n "$PRE_COMMAND" ] && kill %1
     notify_cmd "Download finished: $folder"
     exit 0
   fi
 
-  ep=$(choose_ep "$anime")
+  if [[ "$next_ep" = true ]]; then
+    ep=$(choose_ep "$anime" 1)
+  elif [[ "$previous_ep" = true ]]; then
+    ep=$(choose_ep "$anime" -1)
+  else
+    ep=$(choose_ep "$anime")
+  fi
   if [ -z "$ep" ]; then
     [ -n "$PRE_COMMAND" ] && kill %1
     exit 1
   fi
   echo "Selected episode: $ep"
 
-  opt=$(printf "%s\n%s" "Stream" "Download" | menu_cmd)
+  if [ "$stream_ep" = true ]; then
+    opt="Stream"
+  elif [ -n "$download_range" ]; then
+    opt="Download"
+  else
+    opt=$(printf "%s\n%s" "Stream" "Download" | menu_cmd)
+  fi
   notify_cmd "Fetching video url..."
   url=$(get_link "$ep")
   echo "Got url: $url"
