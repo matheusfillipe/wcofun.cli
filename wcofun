@@ -114,6 +114,7 @@ finalize (){
 }
 
 mkdir -p "$storage"
+touch "$storage/lastq"
 trap finalize INT
 
 menu_cmd () {
