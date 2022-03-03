@@ -303,13 +303,10 @@ choose_ep () {
   else
     n=$(get_num "$lastq")
     if [ -n "$offset" ]; then
-      >&2 echo "offset=$offset"
-      >&2 echo "n=$n"
       n=$((n + offset))
       choosen="$n> $(echo "$titles" | sed "${n}q;d")"
     else
-      n="$n>"
-      choosen=$(echo "$titles" | awk '{print NR  "> " $0}' | menu_cmd --query \""$n"\" )
+      choosen=$(echo "$titles" | awk '{print NR  "> " $0}' | menu_cmd --query \""$n>"\" )
     fi
   fi
 
@@ -320,6 +317,7 @@ choose_ep () {
   save_cache_episode "$(get_cache_episode | jq '.'"$choosen_anime"' = "'"$choosen"'"')"
   n=$(get_num "$choosen")
   echo "$list" | htmlq 'a' -a href | awk 'NR=='"$n"
+  echo "$n"
 }
 
 all_eps () {
@@ -544,6 +542,9 @@ main () {
   else
     ep=$(choose_ep "$anime")
   fi
+  n=$(echo "$ep" | sed "2q;d")
+  ep=$(echo "$ep" | sed "1q;d")
+
   if [ -z "$ep" ]; then
     [ -n "$PRE_COMMAND" ] && kill %1
     exit 1
@@ -564,7 +565,7 @@ main () {
   [ -n "$PRE_COMMAND" ] && kill %1
   case $opt in
     Stream)
-      notify_cmd "Starting stream..."
+      notify_cmd "Starting stream of episode $n"
       stream "$url"
       ;;
     Download)
@@ -573,7 +574,7 @@ main () {
         notify_cmd "Canceled."
         exit 0
       fi
-      notify_cmd "Downloading to: $filename"
+      notify_cmd "Downloading episode $n to: $filename"
       download "$url" "$filename"
       notify_cmd "Download finished: $filename"
       ;;
