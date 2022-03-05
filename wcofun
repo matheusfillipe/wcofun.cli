@@ -393,6 +393,7 @@ download_many () {
 help() {
    echo 
    echo -e "                     ${GREEN}WCOFUN.CLI${NC}"
+   echo -e "    Watch and stream anime online for free in your terminal"
    echo -e "${BLUE}---------------------------------------------------------------------------------${NC}"
    echo -e "${PURPLE}Syntax: ${NC}"
    echo -e "  ${WHITE}$0${NC} [-n] [${BROWN}-s${NC} | ${BLUE}-D${NC} | ${RED}-d [range]${NC}] ${GREEN}[search query]${NC}"
