@@ -407,9 +407,11 @@ help() {
    echo -e "${PURPLE}Options: ${NC}"
    echo -e "  ${GREEN}-D:${NC} Download all episodes of selected anime."
    echo -e "  ${GREEN}-d [ep-number|start-end]:${NC} Download a range of episodes by specifying the beginning and end. You can also specify a single episode number or a range like n- to download all starting from the nth or -n to download all until the nth. An empty range (-) will cause cause it to prompt for the episode number and then download."
+   echo -e "  ${GREEN}-o:${NC} Output file name for download$EDITOR"
    echo -e "  ${GREEN}-s:${NC} Stream selectped episode"
    echo -e "  ${GREEN}-n:${NC} Play next episode of lastly watched anime"
    echo -e "  ${GREEN}-p:${NC} Play previous episode of lastly watched anime"
+   echo -e "  ${GREEN}-r:${NC} Repeat last watched episode"
    echo -e "  ${GREEN}-P [command]:${NC} Pre execution command. Useful for launching an http proxy."
    echo -e "  ${GREEN}-e:${NC} Edit config with $EDITOR"
    echo -e "  ${GREEN}-c:${NC} Edit cached searches with $EDITOR"
@@ -419,12 +421,14 @@ help() {
 
 parse_opts () {
   download=false
+  download_filename=""
   stream_ep=false
   next_ep=false
   previous_ep=false
+  repeat_ep=false
   download_range=""
 
-  while getopts "hP:d:Dsecnp" o; do
+  while getopts "hP:d:o:Dsecnpr" o; do
       case "${o}" in
           \?)
               echo -e "${RED}Invalid option or missing argument: $OPTARG${NC}"
@@ -461,8 +465,14 @@ parse_opts () {
           p)
             previous_ep=true
             ;;
+          r)
+            repeat_ep=true
+            ;;
           D)
             download=true
+          ;;
+          o)
+            download_filename=${OPTARG}
           ;;
           P)
               PRE_COMMAND=${OPTARG}
@@ -496,7 +506,7 @@ main () {
     sleep 3
   fi
 
-  if [[ "$next_ep" = true || "$previous_ep" = true ]]; then
+  if [[ "$repeat_ep" = true || "$next_ep" = true || "$previous_ep" = true ]]; then
     query_file="$storage/lastq"
     lastq=$(head -n 1 "$query_file")
     query=${lastq//-/_}
@@ -536,7 +546,9 @@ main () {
     exit 0
   fi
 
-  if [[ "$next_ep" = true ]]; then
+  if [[ "$repeat_ep" = true ]]; then
+    ep=$(choose_ep "$anime" 0)
+  elif [[ "$next_ep" = true ]]; then
     ep=$(choose_ep "$anime" 1)
   elif [[ "$previous_ep" = true ]]; then
     ep=$(choose_ep "$anime" -1)
@@ -570,14 +582,16 @@ main () {
       stream "$url"
       ;;
     Download)
-      filename=$(echo " " | menu_cmd --prompt \"Save Path: \" --query \""${ep##*/}.mp4"\" --print-query)
-      if [ -z "$filename" ]; then
+      if [ -z "$download_filename" ]; then
+        download_filename=$(echo " " | menu_cmd --prompt \"Save Path: \" --query \""${ep##*/}.mp4"\" --print-query)
+      fi
+      if [ -z "$download_filename" ]; then
         notify_cmd "Canceled."
         exit 0
       fi
-      notify_cmd "Downloading episode $n to: $filename"
-      download "$url" "$filename"
-      notify_cmd "Download finished: $filename"
+      notify_cmd "Downloading episode $n to: $download_filename"
+      download "$url" "$download_filename"
+      notify_cmd "Download finished: $download_filename"
       ;;
   esac
 }
