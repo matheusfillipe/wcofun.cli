@@ -402,12 +402,14 @@ help() {
    echo -e "${PURPLE}Example: ${NC}"
    echo -e "  Search and stream or download one episode: wcofun ${GREEN}[search query]${NC}"
    echo -e "  Download all episodes: wcofun -D ${GREEN}[search query]${NC}"
+   echo -e "  Download next episode: wcofun -d - -n -o -"
+   echo -e "  Repeat streaming last episode: wcofun -s -r"
    echo -e "  Watch next episode: wcofun -n"
    echo
    echo -e "${PURPLE}Options: ${NC}"
    echo -e "  ${GREEN}-D:${NC} Download all episodes of selected anime."
    echo -e "  ${GREEN}-d [ep-number|start-end]:${NC} Download a range of episodes by specifying the beginning and end. You can also specify a single episode number or a range like n- to download all starting from the nth or -n to download all until the nth. An empty range (-) will cause cause it to prompt for the episode number and then download."
-   echo -e "  ${GREEN}-o:${NC} Output file name for download$EDITOR"
+   echo -e "  ${GREEN}-o:${NC} Output file name for download. '-' to use the default$EDITOR"
    echo -e "  ${GREEN}-s:${NC} Stream selectped episode"
    echo -e "  ${GREEN}-n:${NC} Play next episode of lastly watched anime"
    echo -e "  ${GREEN}-p:${NC} Play previous episode of lastly watched anime"
@@ -584,6 +586,9 @@ main () {
     Download)
       if [ -z "$download_filename" ]; then
         download_filename=$(echo " " | menu_cmd --prompt \"Save Path: \" --query \""${ep##*/}.mp4"\" --print-query)
+      fi
+      if [ "$download_filename" == "-" ]; then
+        download_filename="${ep##*/}.mp4"
       fi
       if [ -z "$download_filename" ]; then
         notify_cmd "Canceled."
