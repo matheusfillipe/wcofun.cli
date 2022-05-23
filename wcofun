@@ -25,6 +25,7 @@ UA="User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 
 for curl in \
   curl-impersonate \
   curl-impersonate-chrome \
+  curl-impersonate-ff \
   curl-impersonate-firefox \
   curl
 do
