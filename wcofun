@@ -162,7 +162,7 @@ get_link() {
 
   innerscript=$(
   echo "$script" | cut -d "[" -f2 | cut -d "]" -f1 | tr "," "\n" | while read -r LINE; do
-    n=$(echo "$LINE" | tr -d \" | base64 --decode | sed 's/[^[:digit:]]//g')
+    n=$(echo "$LINE" | tr -d \" | base64 -d | sed 's/[^[:digit:]]//g')
     n=$((n - offset))
     printf "%s" "$(chru $n)"
   done
