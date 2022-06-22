@@ -1,3 +1,5 @@
+### I wont longer be actively maitaining this in favor or blackbeard: https://github.com/matheusfillipe/blackbeard
+
 # wcofun.cli
 
 Watch videos from wcofun.com directly from your terminal. You can search, stream and download videos or playlists. You can also continue from the episode where you were left of.
