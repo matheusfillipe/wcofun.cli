@@ -189,3 +189,11 @@ docker cp curl-impersonate-chrome:/build/out/curl-impersonate /some/important/pa
 ```
 
 Now just set `CURL_PATH="/some/important/path/curl-impersonate"` on your `~/.wcofunrc`
+
+On arch linux you can easilly install it with:
+
+```bash
+yay -S curl-impersonate-bin
+```
+
+And set `CURL_PATH="/usr/local/bin/curl-impersonate-chrome"` on your `~/.wcofunrc`
