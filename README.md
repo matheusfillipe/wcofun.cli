@@ -5,19 +5,6 @@
 Watch videos from wcofun.com directly from your terminal. You can search, stream and download videos or playlists. You can also continue from the episode where you were left of.
 
 
-1. [Installation](#installation)
-   * [Dependencies](#dependencies)
-     * [Ubuntu](#ubuntu)
-     * [Arch Linux](#arch-linux)
-     * [OSX](#osx)
-2. [Usage](#usage)
-3. [Customization](#customization)
-4. [No results problem](#no-results-problem)
-   * [1. Proxy](#1.-proxy)
-   * [2. Ubuntu's openssl 1.1.1f](#2.-ubuntu's-openssl-1.1.1f)
-   * [3. Curl impersonate](#3.-curl-impersonate)
-
-
 ## Installation
 
 Just download [wcofun](https://raw.githubusercontent.com/matheusfillipe/wcofun.cli/master/wcofun) script, install the dependencies listed bellow and run it.
