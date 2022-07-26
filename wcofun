@@ -157,7 +157,7 @@ chru() { printf "\x$(printf %x "$1")"; }
 get_link() {
   link=$1
   script=$(
-  "$CURL_PATH" --silent $CURL_EXTRA_PARAMS "$link" -H "$UA" --compressed | htmlq 'body > div:nth-child(3) > div.twelve.columns > div > div.fourteen.columns > div:nth-child(7) > script:nth-child(2)' | sed 's/<script>\(.*\)<\/script>/\1/')
+  "$CURL_PATH" --silent $CURL_EXTRA_PARAMS "$link" -H "$UA" --compressed | htmlq 'div.fourteen.columns script:nth-child(2)' | sed 's/<script>\(.*\)<\/script>/\1/')
   offset=$(echo "$script" | sed 's/.*- \([0-9]*\).*).*/\1/')
 
   innerscript=$(
