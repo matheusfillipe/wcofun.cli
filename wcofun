@@ -19,7 +19,7 @@ else
  fi
 
 # User agent. Maybe you have problems with this
-UA="User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:96.0) Gecko/20100101 Firefox/96.0"
+UA="User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:107.0) Gecko/20100101 Firefox/107.0"
 
 # Use system's curl if curl-impersonate is not found
 for curl in \
@@ -68,8 +68,8 @@ then
   exit 1
 fi
 
-baseurl="https://www.wcofun.com/"
-domainname="www.wcofun.com"
+baseurl="https://www.wcofun.net/"
+domainname="www.wcofun.net"
 
 storage="$HOME/.local/share/wcofun.cli/"
 
@@ -157,7 +157,21 @@ chru() { printf "\x$(printf %x "$1")"; }
 get_link() {
   link=$1
   script=$(
-  "$CURL_PATH" --silent $CURL_EXTRA_PARAMS "$link" -H "$UA" --compressed | htmlq 'div.fourteen.columns script:nth-child(2)' | sed 's/<script>\(.*\)<\/script>/\1/')
+    "$CURL_PATH" --silent $CURL_EXTRA_PARAMS "$link" -H "$UA" \
+    -H "authority: $domainname" \
+    -H 'pragma: no-cache' \
+    -H 'cache-control: no-cache' \
+    -H 'accept: application/json, text/javascript, */*; q=0.01' \
+    -H "$UA" \
+    -H 'x-requested-with: XMLHttpRequest' \
+    -H 'sec-gpc: 1' \
+    -H 'sec-fetch-site: same-origin' \
+    -H 'sec-fetch-mode: cors' \
+    -H 'sec-fetch-dest: empty' \
+    -H "Referer: $baseurl" \
+    -H 'accept-language: en-US,en;q=0.9' \
+    --compressed | htmlq 'div.fourteen.columns script:nth-child(2)' | sed 's/<script>\(.*\)<\/script>/\1/')
+
   offset=$(echo "$script" | sed 's/.*- \([0-9]*\).*).*/\1/')
 
   innerscript=$(
@@ -168,8 +182,23 @@ get_link() {
   done
   )
 
-  url=$baseurl$(echo "$innerscript" | sed 's/^.*src="\([^"]*\)".*$/\1/')
-  url=$baseurl$("$CURL_PATH" --silent $CURL_EXTRA_PARAMS "$url" -H "$UA" | grep "$.getJSON" | sed 's/^.*"\(.*\)".*$/\1/')
+  url=$(echo "$innerscript" | sed 's/^.*src="\([^"]*\)".*$/\1/')
+  url=$baseurl$(
+    "$CURL_PATH" --silent $CURL_EXTRA_PARAMS "$url" -H "$UA" \
+    -H "authority: $domainname" \
+    -H 'pragma: no-cache' \
+    -H 'cache-control: no-cache' \
+    -H 'accept: application/json, text/javascript, */*; q=0.01' \
+    -H "$UA" \
+    -H 'x-requested-with: XMLHttpRequest' \
+    -H 'sec-gpc: 1' \
+    -H 'sec-fetch-site: same-origin' \
+    -H 'sec-fetch-mode: cors' \
+    -H 'sec-fetch-dest: empty' \
+    -H "Referer: $baseurl" \
+    -H 'accept-language: en-US,en;q=0.9' \
+    --compressed | grep "$.getJSON" | sed 's/^.*"\(.*\)".*$/\1/')
+
 
   "$CURL_PATH" --silent $CURL_EXTRA_PARAMS  "$url" \
     -H "authority: $domainname" \
@@ -247,11 +276,13 @@ search () {
     -H 'Cache-Control: no-cache' \
     -H 'TE: trailers' \
     --data-raw "catara=${1// /+}&konuara=series" \
-    --compressed | htmlq "div.img"
+    --compressed
   )
+  list=$(echo "$list" | htmlq "div.img")
   titles=$(echo "$list" | htmlq 'img' -a alt)
  
   if [ -z "$titles" ]; then
+    >&2 echo "No titles"
     exit 1
   fi
 
